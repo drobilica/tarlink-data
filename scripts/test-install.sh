@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+unset XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME XDG_STATE_HOME
 case "$(uname -s)" in Darwin) test_tmp=/private/tmp ;; *) test_tmp=${TMPDIR:-/tmp} ;; esac
 root=$(mktemp -d "$test_tmp/tarlink-data-test.XXXXXXXX")
 trap 'rm -rf "$root"' EXIT
