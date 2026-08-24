@@ -9,6 +9,14 @@ go build ./cmd/tarlink-data
 tarlink list --installed --json | tarlink-data sync
 ```
 
+Install the Linux amd64 release from the official repository:
+
+```sh
+curl --proto '=https' --tlsv1.2 -fsS https://raw.githubusercontent.com/drobilica/tarlink-data/main/install.sh | sh
+```
+
+Run the repository's `uninstall.sh` for complete TarLink Data removal. It removes the installed binary and TarLink Data's XDG config, cache, state, and managed-data directories, including configured recipes and copied data. It does not remove configured sources or external recipe directories.
+
 Minimal `config.yaml`:
 
 ```yaml

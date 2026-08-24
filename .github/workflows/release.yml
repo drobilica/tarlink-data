@@ -29,6 +29,7 @@ jobs:
           chmod 0755 tarlink-data-linux-amd64
           test "$(./tarlink-data-linux-amd64 --version)" = "tarlink-data ${GITHUB_REF_NAME}"
           sha256sum tarlink-data-linux-amd64 > SHA256SUMS
+          grep -F "  tarlink-data-linux-amd64" SHA256SUMS
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
