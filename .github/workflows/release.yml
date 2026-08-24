@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: Validate
+        run: ./scripts/validate.sh
+      - name: Build Linux amd64 binary
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -trimpath -ldflags "-X main.version=${GITHUB_REF_NAME}" -o tarlink-data-linux-amd64 ./cmd/tarlink-data
+          chmod 0755 tarlink-data-linux-amd64
+          test "$(./tarlink-data-linux-amd64 --version)" = "tarlink-data ${GITHUB_REF_NAME}"
+          sha256sum tarlink-data-linux-amd64 > SHA256SUMS
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "TarLink Data ${GITHUB_REF_NAME}" \
+            --notes "TarLink Data ${GITHUB_REF_NAME} provides filesystem and HTTPS-index sources, SHA-256 data identity, incremental filesystem indexing, verified atomic materialization, local and HTTPS recipe catalogs, dry-run and JSON output, and XDG-compliant storage.\n\nApplication-specific runtime wiring between TarLink Data's managed data root and individual applications is not part of ${GITHUB_REF_NAME}." \
+            tarlink-data-linux-amd64 SHA256SUMS

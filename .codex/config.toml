@@ -1,0 +1,18 @@
+# Project-local Codex defaults.
+[features.multi_agent_v2]
+expose_spawn_agent_model_overrides = false
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "medium"
+
+[agents.specialist]
+description = "Specialist for difficult architecture, security, and debugging review."
+config_file = "agents/specialist.toml"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+developer_instructions = """
+Review only genuinely difficult architecture, trust-boundary security, lifecycle correctness, debugging, or security-sensitive implementation. Return concrete defects and focused fixes; do not redesign broadly and do not commit, push, tag, or release.
+"""
