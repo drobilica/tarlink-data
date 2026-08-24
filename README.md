@@ -1,23 +1,36 @@
 # TarLink Data
 
-TarLink Data resolves exact external application data from recipes selected by the user and materializes it in TarLink Data's own managed data root. It does not modify TarLink, wire data into applications, or bundle recipes.
+TarLink Data resolves exact external application data from recipes selected by the user. It materializes that data in its own managed XDG data root. TarLink Data is a separate program: it does not modify TarLink, use TarLink's private state, wire data into applications, or bundle recipes.
 
-Build and run:
-
-```sh
-go build ./cmd/tarlink-data
-tarlink list --installed --json | tarlink-data sync
-```
+## Install
 
 Install the Linux amd64 release from the official repository:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsS https://raw.githubusercontent.com/drobilica/tarlink-data/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/drobilica/tarlink-data/main/install.sh | sh
 ```
 
-Run the repository's `uninstall.sh` for complete TarLink Data removal. It removes the installed binary and TarLink Data's XDG config, cache, state, and managed-data directories, including configured recipes and copied data. It does not remove configured sources or external recipe directories.
+The installer verifies the release checksum and records ownership of `~/.local/bin/tarlink-data`. It refuses to replace an installation it does not own. Run `uninstall.sh` from this repository to remove the binary and TarLink Data's own XDG config, cache, state, and managed data; configured sources and recipe directories are not removed.
 
-Minimal `config.yaml`:
+## Workflow
+
+1. Choose or write recipes and configure local directories or HTTPS indexes.
+2. Provide installed-application JSON on standard input, commonly from TarLink.
+3. Run `tarlink-data sync` to resolve and materialize required files.
+
+```sh
+tarlink list --installed --json | tarlink-data sync
+tarlink-data sync --dry-run
+tarlink-data sync --json
+tarlink-data upgrade
+tarlink-data --version
+```
+
+TarLink is only one possible producer of the installed-application input. TarLink Data does not read or manage TarLink's private state.
+
+## Configuration
+
+`$XDG_CONFIG_HOME/tarlink-data/config.yaml` (or `~/.config/tarlink-data/config.yaml`) contains user-selected recipe catalogs and sources:
 
 ```yaml
 version: 1
@@ -41,12 +54,22 @@ recipes:
             sha256: 3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7
 ```
 
-Local sources are directories that TarLink Data indexes. HTTPS sources point to a JSON source index whose relative paths resolve beside that index; indexes only locate candidates. SHA-256 establishes identity, and every copied/downloaded file is independently verified.
+Local sources are directories that TarLink Data indexes. HTTPS sources point to JSON indexes whose relative paths resolve beside the index. Indexes only locate candidates; SHA-256 establishes identity, and every copied or downloaded file is independently verified. No recipes or proprietary application data are included.
 
-No recipes are bundled. Users choose recipe sources and must have the right to use the data they configure. TarLink Data never downloads arbitrary application data based solely on filenames. V1 materializes data under its own XDG data root; application-specific runtime wiring remains outside this initial release.
-
-Locations:
+## Locations
 
 - Config: `$XDG_CONFIG_HOME/tarlink-data/config.yaml` or `~/.config/tarlink-data/config.yaml`
 - Cache: `$XDG_CACHE_HOME/tarlink-data/` or `~/.cache/tarlink-data/`
+- State and ownership: `$XDG_STATE_HOME/tarlink-data/` or `~/.local/state/tarlink-data/`
 - Managed data: `$XDG_DATA_HOME/tarlink-data/apps/<app>/` or `~/.local/share/tarlink-data/apps/<app>/`
+
+Passive release checks use only the cache hot path, approximately once per day, and report available stable releases on stderr. Network failures are silent. `dev` builds do not check for updates.
+
+## Development
+
+```sh
+./scripts/validate.sh --quick
+./scripts/validate.sh
+```
+
+Production builds are pure Go with `CGO_ENABLED=0`.

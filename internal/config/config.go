@@ -23,6 +23,7 @@ type Paths struct {
 	ConfigFile string
 	CacheDir   string
 	DataDir    string
+	StateDir   string
 }
 
 func XDGPaths() (Paths, error) {
@@ -42,10 +43,15 @@ func XDGPaths() (Paths, error) {
 	if err != nil {
 		return Paths{}, err
 	}
+	stateHome, err := xdgDir("XDG_STATE_HOME", filepath.Join(home, ".local", "state"))
+	if err != nil {
+		return Paths{}, err
+	}
 	return Paths{
 		ConfigFile: filepath.Join(configHome, "tarlink-data", "config.yaml"),
 		CacheDir:   filepath.Join(cacheHome, "tarlink-data"),
 		DataDir:    filepath.Join(dataHome, "tarlink-data"),
+		StateDir:   filepath.Join(stateHome, "tarlink-data"),
 	}, nil
 }
 

@@ -12,12 +12,14 @@ import (
 	"github.com/drobilica/tarlink-data/internal/recipe"
 	"github.com/drobilica/tarlink-data/internal/source"
 	"github.com/drobilica/tarlink-data/internal/syncer"
+	"github.com/drobilica/tarlink-data/internal/update"
 )
 
 const help = `TarLink Data resolves user-selected external application data.
 
 Usage:
   tarlink-data sync [--dry-run] [--json]
+  tarlink-data upgrade
   tarlink-data --help
   tarlink-data --version
 `
@@ -41,6 +43,25 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, version strin
 		_, _ = fmt.Fprintf(stdout, "tarlink-data %s\n", version)
 		return 0
 	}
+	if args[0] == "upgrade" {
+		if len(args) != 1 {
+			return fail(stderr, "upgrade does not accept arguments")
+		}
+		paths, err := config.XDGPaths()
+		if err != nil {
+			return fail(stderr, "%v", err)
+		}
+		result, err := update.Upgrade(version, paths.CacheDir, paths.StateDir, http.DefaultClient)
+		if err != nil {
+			return fail(stderr, "%v", err)
+		}
+		if result == "already current" {
+			_, _ = io.WriteString(stdout, "TarLink Data is already current.\n")
+		} else {
+			_, _ = fmt.Fprintf(stdout, "TarLink Data upgraded to %s.\n", result)
+		}
+		return 0
+	}
 	if args[0] != "sync" {
 		return fail(stderr, "unknown command %q", args[0])
 	}
@@ -52,6 +73,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer, version strin
 	if err != nil {
 		return fail(stderr, "%v", err)
 	}
+	update.Notify(paths.CacheDir, version, http.DefaultClient, stderr)
 	cfg, err := config.Load(paths.ConfigFile)
 	if err != nil {
 		return fail(stderr, "%v", err)

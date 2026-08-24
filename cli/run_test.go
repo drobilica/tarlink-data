@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestBasicCommands(t *testing.T) {
@@ -31,6 +32,12 @@ func TestSyncSyntheticAcceptanceScenario(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", configHome)
 	t.Setenv("XDG_CACHE_HOME", cacheHome)
 	t.Setenv("XDG_DATA_HOME", dataHome)
+	if err := os.MkdirAll(filepath.Join(cacheHome, "tarlink-data"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(cacheHome, "tarlink-data", "update.json"), []byte(`{"checked_at":`+strconv.FormatInt(time.Now().Unix(), 10)+`,"latest":"v9.9.9"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
 	sourceDir := t.TempDir()
 	payload := []byte("synthetic payload")
 	digest := sha256.Sum256(payload)
@@ -53,7 +60,7 @@ func TestSyncSyntheticAcceptanceScenario(t *testing.T) {
 	}
 	input := `[{"id":"example-app","installed_version":"1.0","extra":true}]`
 	var out, errOut bytes.Buffer
-	if code := Run([]string{"sync"}, strings.NewReader(input), &out, &errOut, "dev"); code != 0 || !strings.Contains(out.String(), "copied") {
+	if code := Run([]string{"sync"}, strings.NewReader(input), &out, &errOut, "v1.0.0"); code != 0 || !strings.Contains(out.String(), "copied") || !strings.Contains(errOut.String(), "update available: v9.9.9") {
 		t.Fatalf("first sync: code=%d out=%q err=%q", code, out.String(), errOut.String())
 	}
 	out.Reset()
