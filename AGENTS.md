@@ -22,10 +22,6 @@ TarLink Data is a separate, narrow Unix-like program that resolves external appl
 - Do not include proprietary application-data recipes, ROM/BIOS hashes, copyrighted filenames, game-to-ROM mappings, or real proprietary games. Tests use generated synthetic bytes and fake app names.
 - Pre-1.0, prefer clean changes over compatibility layers; do not add migrations or legacy parsing unless requested.
 
-## Agent workflow
-
-Carry over TarLink Effort 1/2/3. Use the lowest sufficient effort, workers for routine implementation/testing, and the specialist only for genuinely difficult security, architecture, debugging, or review work. Keep concurrency small; the orchestrator owns scope, integration, and final review.
-
 ## Git
 
 Agents never commit, push, tag, or release unless explicitly authorized. Never touch unrelated user work.
