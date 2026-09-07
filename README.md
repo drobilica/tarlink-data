@@ -19,14 +19,25 @@ The installer verifies the release checksum and records ownership of `~/.local/b
 3. Run `tarlink-data sync` to resolve and materialize required files.
 
 ```sh
-tarlink list --installed --json | tarlink-data sync
+tarlink installed --json | tarlink-data sync
 tarlink-data sync --dry-run
 tarlink-data sync --json
 tarlink-data upgrade
 tarlink-data --version
 ```
 
-TarLink is only one possible producer of the installed-application input. TarLink Data does not read or manage TarLink's private state.
+TarLink is only one possible producer of the installed-application input. TarLink Data does not read or manage TarLink's private state. `sync` reads at most 1 MiB from standard input and accepts this versioned JSON contract:
+
+```json
+{
+  "version": 1,
+  "applications": [
+    { "id": "example-app", "version": "1.0" }
+  ]
+}
+```
+
+Version 1 accepts only those fields and requires non-empty, unique application IDs and versions. Unsupported contract versions and malformed input fail clearly.
 
 ## Configuration
 

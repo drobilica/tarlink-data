@@ -13,11 +13,16 @@ import (
 	"github.com/drobilica/tarlink-data/internal/storage"
 )
 
-const maxInputBytes = 16 << 20
+const maxInputBytes = 1 << 20
+
+type installedContract struct {
+	Version      int             `json:"version"`
+	Applications *[]InstalledApp `json:"applications"`
+}
 
 type InstalledApp struct {
 	ID      string `json:"id"`
-	Version string `json:"installed_version"`
+	Version string `json:"version"`
 }
 
 type Result struct {
@@ -45,8 +50,9 @@ func ParseInstalled(r io.Reader) ([]InstalledApp, error) {
 		return nil, fmt.Errorf("installed application input is too large")
 	}
 	dec := json.NewDecoder(strings.NewReader(string(data)))
-	var apps []InstalledApp
-	if err := dec.Decode(&apps); err != nil {
+	dec.DisallowUnknownFields()
+	var contract installedContract
+	if err := dec.Decode(&contract); err != nil {
 		return nil, fmt.Errorf("parse installed application JSON: %w", err)
 	}
 	var extra any
@@ -56,17 +62,23 @@ func ParseInstalled(r io.Reader) ([]InstalledApp, error) {
 		}
 		return nil, fmt.Errorf("parse installed application JSON: %w", err)
 	}
-	seen := make(map[string]struct{}, len(apps))
-	result := make([]InstalledApp, 0, len(apps))
-	for _, app := range apps {
-		if app.Version == "" {
-			continue
-		}
+	if contract.Version != 1 {
+		return nil, fmt.Errorf("unsupported installed application contract version %d", contract.Version)
+	}
+	if contract.Applications == nil {
+		return nil, fmt.Errorf("installed application contract is missing applications")
+	}
+	seen := make(map[string]struct{}, len(*contract.Applications))
+	result := make([]InstalledApp, 0, len(*contract.Applications))
+	for _, app := range *contract.Applications {
 		if app.ID == "" {
 			return nil, fmt.Errorf("installed application has empty id")
 		}
+		if app.Version == "" {
+			return nil, fmt.Errorf("installed application %q has empty version", app.ID)
+		}
 		if _, exists := seen[app.ID]; exists {
-			continue
+			return nil, fmt.Errorf("installed application %q is duplicated", app.ID)
 		}
 		seen[app.ID] = struct{}{}
 		result = append(result, app)

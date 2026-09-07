@@ -58,7 +58,7 @@ func TestSyncSyntheticAcceptanceScenario(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configText), 0600); err != nil {
 		t.Fatal(err)
 	}
-	input := `[{"id":"example-app","installed_version":"1.0","extra":true}]`
+	input := `{"version":1,"applications":[{"id":"example-app","version":"1.0"}]}`
 	var out, errOut bytes.Buffer
 	if code := Run([]string{"sync"}, strings.NewReader(input), &out, &errOut, "v1.0.0"); code != 0 || !strings.Contains(out.String(), "copied") || !strings.Contains(errOut.String(), "update available: v9.9.9") {
 		t.Fatalf("first sync: code=%d out=%q err=%q", code, out.String(), errOut.String())
@@ -88,7 +88,7 @@ func TestJSONOutputRemainsJSONOnConfigFailure(t *testing.T) {
 	// this still verifies that diagnostics never contaminate stdout when JSON
 	// mode is selected after configuration is made available by callers.
 	_ = json.Valid
-	Run([]string{"sync", "--json"}, strings.NewReader("[]"), &out, &errOut, "dev")
+	Run([]string{"sync", "--json"}, strings.NewReader(`{"version":1,"applications":[]}`), &out, &errOut, "dev")
 	if out.Len() != 0 {
 		t.Fatalf("unexpected non-JSON output on early error: %q", out.String())
 	}
